@@ -31,10 +31,12 @@ const Home = ({ route }) => {
       <View style={styles.searchContainer}>
         <Text style={styles.searchTitle}>"     솜길 소개     "</Text>
         <View style={styles.searchBar}>
-          <TextInput 
-            placeholder="어떤 기사님을 원하시나요?"
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Reservation')}
             style={styles.searchInput}
-          />
+          >
+            <Text style={styles.placeholderText}>어떤 기사님을 원하시나요?</Text>
+          </TouchableOpacity>
           <Ionicons name="search" size={24} color="black" />
         </View>
       </View>
@@ -217,6 +219,10 @@ const styles = StyleSheet.create({
   menuSubtitle: {
     color: '#666',
     marginTop: 5,
+  },
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
   },
 });
 

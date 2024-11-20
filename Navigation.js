@@ -4,7 +4,7 @@ import Home from "./screens/Home";
 import Kakao from "./screens/Kakao";
 import Nicname from "./screens/Nicname";
 import Board from "./screens/board";
-import Reservation from "./screens/Reservation"; // 추가
+import Reservation from "./screens/Reservation";
 
 const Stack = createStackNavigator();
 
@@ -16,11 +16,11 @@ const Navigation = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Home" component={Home} />  
+      <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Kakao" component={Kakao} />
       <Stack.Screen name="Nicname" component={Nicname} />
-      <Stack.Screen name="board" component={Board} />
-      <Stack.Screen name="Reservation" component={Reservation} /> // 추가
+      <Stack.Screen name="Board" component={Board} />
+      <Stack.Screen name="Reservation" component={Reservation} />
     </Stack.Navigator>
   );
 };
