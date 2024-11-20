@@ -76,38 +76,14 @@ const Home = ({ route }) => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="map" size={24} color="black" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>숨겨진 명소 코스</Text>
-            <Text style={styles.menuSubtitle}>숨은 명소를 속속들이 찾아드립니다!</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="map" size={24} color="black" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>숨겨진 명소 코스</Text>
-            <Text style={styles.menuSubtitle}>숨은 명소를 속속들이 찾아드립니다!</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="map" size={24} color="black" />
-          <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>숨겨진 명소 코스</Text>
-            <Text style={styles.menuSubtitle}>숨은 명소를 속속들이 찾아드립니다!</Text>
-          </View>
-        </TouchableOpacity>
-
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => navigation.navigate('Reservation')}
+          onPress={() => navigation.navigate('Package1')}
         >
-          <Ionicons name="calendar" size={24} color="black" />
+          <Ionicons name="map" size={24} color="black" />
           <View style={styles.menuTextContainer}>
-            <Text style={styles.menuTitle}>예약하기</Text>
-            <Text style={styles.menuSubtitle}>여행 일정을 예약해보세요!</Text>
+            <Text style={styles.menuTitle}>숨겨진 명소 코스</Text>
+            <Text style={styles.menuSubtitle}>숨은 명소를 속속들이 찾아드립니다!</Text>
           </View>
         </TouchableOpacity>
       </View>
