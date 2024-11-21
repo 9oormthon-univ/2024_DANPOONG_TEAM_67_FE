@@ -25,6 +25,8 @@ const Reservation = () => {
   const [request, setRequest] = useState('');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const handleReservation = () => {
     if (!departure || !destination || !people) {
@@ -76,6 +78,18 @@ const Reservation = () => {
     setDate(currentDate);
   };
 
+  const handleSearch = (text, isDeparture) => {
+    if (text.length > 0) {
+      setSelectingDeparture(isDeparture);
+      setSearchKeyword(text);
+      setShowMap(true);
+    }
+  };
+
+  const handleBack = () => {
+    setShowMap(false);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -86,99 +100,118 @@ const Reservation = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.container}>
-        <View style={styles.locationContainer}>
-          <TouchableOpacity 
-            style={styles.locationInput}
-            onPress={() => {
-              setSelectingDeparture(true);
-              setShowMap(true);
-            }}
+      {showMap ? (
+        <View style={styles.mapContainer}>
+          <KakaoMap 
+            onLocationSelect={handleLocationSelect}
+            initialKeyword={searchKeyword}
+            onBack={handleBack}
+          />
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <View style={styles.locationContainer}>
+            <View style={styles.searchContainer}>
+              <TextInput 
+                style={styles.locationInput}
+                value={departure}
+                onChangeText={setDeparture}
+                placeholder="출발지 검색"
+                returnKeyType="search"
+                onSubmitEditing={() => handleSearch(departure, true)}
+              />
+              <TouchableOpacity 
+                style={styles.searchButton}
+                onPress={() => handleSearch(departure, true)}
+              >
+                <Ionicons name="search" size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchContainer}>
+              <TextInput 
+                style={styles.locationInput}
+                value={destination}
+                onChangeText={setDestination}
+                placeholder="도착지 검색"
+                returnKeyType="search"
+                onSubmitEditing={() => handleSearch(destination, false)}
+              />
+              <TouchableOpacity 
+                style={styles.searchButton}
+                onPress={() => handleSearch(destination, false)}
+              >
+                <Ionicons name="search" size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={styles.label}>날짜 선택</Text>
+          <TouchableOpacity
+            style={styles.dateInput}
+            onPress={() => setShowDatePicker(true)}
           >
-            <Text>{departure || '출발지 검색'}</Text>
+            <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
+            <Ionicons name="calendar" size={24} color="black" />
           </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={onChangeDate}
+            />
+          )}
+
+          <Text style={styles.label}>시간 선택</Text>
           <TouchableOpacity 
-            style={styles.locationInput}
-            onPress={() => {
-              setSelectingDeparture(false);
-              setShowMap(true);
-            }}
+            style={styles.timeInput}
+            onPress={() => setShowTimePicker(true)}
           >
-            <Text>{destination || '도착지 검색'}</Text>
+            <Text>{formatTime(selectedTime)}</Text>
+            <Ionicons name="time-outline" size={20} color="black" />
+          </TouchableOpacity>
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={selectedTime}
+              mode="time"
+              is24Hour={true}
+              display="spinner"
+              onChange={(event, time) => {
+                setShowTimePicker(false);
+                if (time) setSelectedTime(time);
+              }}
+            />
+          )}
+
+          <Text style={styles.label}>인원 선택</Text>
+          <TextInput 
+            style={styles.input}
+            value={people}
+            onChangeText={setPeople}
+            placeholder="명"
+            keyboardType="number-pad"
+          />
+
+          <Text style={styles.label}>기타 요청사항</Text>
+          <TextInput
+            style={styles.requestInput}
+            value={request}
+            onChangeText={setRequest}
+            placeholder="기타 요구사항을 입력하세요"
+            multiline
+          />
+
+          <TouchableOpacity 
+            style={styles.reserveButton}
+            onPress={handleReservation}
+          >
+            <Text style={styles.reserveButtonText}>예약하기</Text>
           </TouchableOpacity>
         </View>
-
-        {showMap && (
-          <View style={styles.mapContainer}>
-            <KakaoMap onLocationSelect={handleLocationSelect} />
-          </View>
-        )}
-
-        <Text style={styles.label}>날짜 선택</Text>
-        <TouchableOpacity
-          style={styles.dateInput}
-          onPress={() => setShowDatePicker(true)}
-        >
-          <Text style={styles.dateText}>{date.toLocaleDateString()}</Text>
-          <Ionicons name="calendar" size={24} color="black" />
-        </TouchableOpacity>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onChangeDate}
-          />
-        )}
-
-        <Text style={styles.label}>시간 선택</Text>
-        <TouchableOpacity 
-          style={styles.timeInput}
-          onPress={() => setShowTimePicker(true)}
-        >
-          <Text>{formatTime(selectedTime)}</Text>
-          <Ionicons name="time-outline" size={20} color="black" />
-        </TouchableOpacity>
-
-        {showTimePicker && (
-          <DateTimePicker
-            value={selectedTime}
-            mode="time"
-            is24Hour={true}
-            display="spinner"
-            onChange={(event, time) => {
-              setShowTimePicker(false);
-              if (time) setSelectedTime(time);
-            }}
-          />
-        )}
-
-        <Text style={styles.label}>인원 선택</Text>
-        <TextInput 
-          style={styles.input}
-          value={people}
-          onChangeText={setPeople}
-          placeholder="명"
-          keyboardType="number-pad"
-        />
-
-        <Text style={styles.label}>기타 요구사항</Text>
-        <TextInput
-          style={styles.requestInput}
-          value={request}
-          onChangeText={setRequest}
-          placeholder="기타 요구사항을 입력하세요"
-          multiline
-        />
-
-        <TouchableOpacity 
-          style={styles.reserveButton}
-          onPress={handleReservation}
-        >
-          <Text style={styles.reserveButtonText}>예약하기</Text>
-        </TouchableOpacity>
-      </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -323,13 +356,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   locationInput: {
+    flex: 1,
     height: 50,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 25,
     paddingHorizontal: 15,
-    marginBottom: 20,
     backgroundColor: '#f0f8ff',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  searchButton: {
+    position: 'absolute',
+    right: 15,
+    height: 50,
     justifyContent: 'center',
   },
 });

@@ -1,108 +1,136 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import WebView from 'react-native-webview';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const KakaoMap = ({ onLocationSelect }) => {
-  const [html, setHtml] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState(null);
+const KakaoMap = ({ onLocationSelect, initialKeyword, onBack }) => {
+  const webViewRef = useRef(null);
 
   useEffect(() => {
-    const mapHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8"/>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=d22e76c8a0d0680b90fc8d5b7dd624cf&libraries=services"></script>
-          <style>
-            .map_wrap {position:relative;width:100%;height:100vh;}
-            #map {width:100%;height:100vh;}
-            #btnMyLocation {position:absolute;bottom:30px;right:10px;width:36px;height:36px;z-index:1;background-color:#fff;border:1px solid #bbb;border-radius:5px;text-align:center;line-height:36px;cursor:pointer;}
-          </style>
-        </head>
-        <body>
-          <div class="map_wrap">
-            <div id="map"></div>
-            <div id="btnMyLocation" onclick="getCurrentLocation()">◎</div>
-          </div>
-
-          <script>
-            var mapContainer = document.getElementById('map');
-            var mapOption = {
-              center: new kakao.maps.LatLng(33.450701, 126.570667),
-              level: 3
-            };
-            var map = new kakao.maps.Map(mapContainer, mapOption);
-            var geocoder = new kakao.maps.services.Geocoder();
-
-            function getCurrentLocation() {
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                  var lat = position.coords.latitude;
-                  var lon = position.coords.longitude;
-                  var locPosition = new kakao.maps.LatLng(lat, lon);
-                  map.setCenter(locPosition);
-                  geocoder.coord2Address(lon, lat, function(result, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                      var address = result[0].address.address_name;
-                      window.ReactNativeWebView.postMessage(JSON.stringify({
-                        latitude: lat,
-                        longitude: lon,
-                        address: address
-                      }));
-                    }
-                  });
-                });
-              }
+    if (initialKeyword && webViewRef.current) {
+      const searchScript = `
+        if (ps) {
+          ps.keywordSearch("${initialKeyword}", function(data, status) {
+            if (status === kakao.maps.services.Status.OK) {
+              console.log("검색 성공");
+              var place = data[0];
+              var moveLatLng = new kakao.maps.LatLng(place.y, place.x);
+              
+              // 지도 중심 이동
+              map.setCenter(moveLatLng);
+              
+              // 마커 이동
+              marker.setPosition(moveLatLng);
+              marker.setMap(map);
+              
+              // 주소 표시
+              document.getElementById('address').innerText = place.address_name || place.road_address_name;
+            } else {
+              console.log("검색 실패");
             }
-
-            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
-              var latlng = mouseEvent.latLng;
-              geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function(result, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                  var address = result[0].address.address_name;
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                    latitude: latlng.getLat(),
-                    longitude: latlng.getLng(),
-                    address: address
-                  }));
-                }
-              });
-            });
-
-            getCurrentLocation();
-          </script>
-        </body>
-      </html>
-    `;
-    setHtml(mapHtml);
-  }, []);
+          });
+        }
+        true;
+      `;
+      
+      setTimeout(() => {
+        webViewRef.current.injectJavaScript(searchScript);
+      }, 1000);
+    }
+  }, [initialKeyword]);
 
   const handleMessage = (event) => {
-    const data = JSON.parse(event.nativeEvent.data);
-    setSelectedLocation(data);
-    if (onLocationSelect) {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
       onLocationSelect(data);
+    } catch (error) {
+      console.error('Message parsing error:', error);
     }
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
+      
       <WebView
-        source={{ html }}
+        ref={webViewRef}
+        source={{ 
+          html: `
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=d22e76c8a0d0680b90fc8d5b7dd624cf&libraries=services"></script>
+                <style>
+                  body { margin: 0; padding: 0; }
+                  #map { width: 100%; height: 100vh; }
+                  #address { 
+                    position: fixed;
+                    bottom: 60px;
+                    left: 0;
+                    right: 0;
+                    background: white;
+                    padding: 15px;
+                    text-align: center;
+                  }
+                </style>
+              </head>
+              <body>
+                <div id="map"></div>
+                <div id="address"></div>
+                <script>
+                  var mapContainer = document.getElementById('map');
+                  var mapOption = {
+                    center: new kakao.maps.LatLng(37.5665, 126.9780),
+                    level: 3
+                  };
+
+                  var map = new kakao.maps.Map(mapContainer, mapOption);
+                  var marker = new kakao.maps.Marker();
+                  var geocoder = new kakao.maps.services.Geocoder();
+                  var ps = new kakao.maps.services.Places();
+
+                  // 마커 클릭 이벤트
+                  kakao.maps.event.addListener(marker, 'click', function() {
+                    var position = marker.getPosition();
+                    geocoder.coord2Address(position.getLng(), position.getLat(), function(result, status) {
+                      if (status === kakao.maps.services.Status.OK) {
+                        var address = result[0].address.address_name;
+                        window.ReactNativeWebView.postMessage(JSON.stringify({
+                          latitude: position.getLat(),
+                          longitude: position.getLng(),
+                          address: address
+                        }));
+                      }
+                    });
+                  });
+
+                  // 지도 클릭 이벤트
+                  kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+                    var latlng = mouseEvent.latLng;
+                    marker.setPosition(latlng);
+                    marker.setMap(map);
+                    
+                    geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function(result, status) {
+                      if (status === kakao.maps.services.Status.OK) {
+                        var address = result[0].address.address_name;
+                        document.getElementById('address').innerText = address;
+                      }
+                    });
+                  });
+                </script>
+              </body>
+            </html>
+          `
+        }}
         style={styles.map}
         onMessage={handleMessage}
         javaScriptEnabled={true}
         geolocationEnabled={true}
       />
-      {selectedLocation && (
-        <View style={styles.infoBox}>
-          <Text style={styles.infoText}>{selectedLocation.address}</Text>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>도착지로 설정</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
@@ -110,36 +138,25 @@ const KakaoMap = ({ onLocationSelect }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    flex: 1,
   },
-  infoBox: {
+  backButton: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    padding: 20,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
+    top: 20,
+    left: 20,
+    zIndex: 1000,
+    backgroundColor: 'white',
+    padding: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  }
 });
 
 export default KakaoMap;

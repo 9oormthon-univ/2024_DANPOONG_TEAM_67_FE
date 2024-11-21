@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "Bloossom",
-    "slug": "Bloossom",
+    "name": "Somgil",
+    "slug": "Somgil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "somgil",
     "splash": {
       "image": "./assets/splashLogo.png",
       "resizeMode": "cover",
@@ -17,13 +18,15 @@
       }
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.somgil.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.somgil.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
