@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Platform, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Platform, Modal, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -169,33 +169,31 @@ const Reservation = () => {
               <TextInput 
                 style={styles.locationInput}
                 value={departure}
-                onChangeText={(text) => handleSearchChange(text, true)}
+                onChangeText={text => handleSearchChange(text, true)}
                 placeholder="출발지 검색"
-                returnKeyType="search"
               />
               <TouchableOpacity 
                 style={styles.searchButton}
-                onPress={() => searchPlaces(departure, true)}
+                onPress={() => handleSearch(departure, true)}
               >
                 <Ionicons name="search" size={20} color="#666" />
               </TouchableOpacity>
             </View>
 
-            {departure.length > 0 && searchResults.length > 0 && (
+            {searchResults.length > 0 && (
               <View style={styles.searchResultsContainer}>
-                {searchResults.map((place) => (
-                  <TouchableOpacity
-                    key={place.id}
-                    style={styles.resultItem}
-                    onPress={() => handlePlaceSelect(place, true)}
-                  >
-                    <Text style={styles.placeName}>{place.place_name}</Text>
-                    <Text style={styles.addressName}>{place.address_name}</Text>
-                    <Text style={styles.distance}>
-                      {(place.distance / 1000).toFixed(2)}km
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView style={styles.resultsList}>
+                  {searchResults.map((place) => (
+                    <TouchableOpacity
+                      key={place.id}
+                      style={styles.resultItem}
+                      onPress={() => handlePlaceSelect(place, selectingDeparture)}
+                    >
+                      <Text style={styles.placeName}>{place.place_name}</Text>
+                      <Text style={styles.addressName}>{place.address_name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
 
@@ -496,6 +494,9 @@ const styles = StyleSheet.create({
   distance: {
     fontSize: 12,
     color: '#999',
+  },
+  resultsList: {
+    flex: 1,
   },
 });
 
