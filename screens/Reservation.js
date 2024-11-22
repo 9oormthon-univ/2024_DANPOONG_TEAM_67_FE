@@ -5,6 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import KakaoMap from './KakaoMap';
 
+// API 키 상수 정의
+const KAKAO_REST_KEY = '9a65039b05d81166bcf8df1dc82404c9'; // REST API 키 입력
+
 const formatTime = (time) => {
   let hours = time.getHours();
   let minutes = time.getMinutes();
@@ -27,6 +30,8 @@ const Reservation = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleReservation = () => {
     if (!departure || !destination || !people) {
@@ -63,11 +68,11 @@ const Reservation = () => {
     );
   };
 
-  const handleLocationSelect = (location) => {
-    if (selectingDeparture) {
-      setDeparture(location.address);
+  const handleLocationSelect = (place, isDeparture) => {
+    if (isDeparture) {
+      setDeparture(place.place_name);
     } else {
-      setDestination(location.address);
+      setDestination(place.place_name);
     }
     setShowMap(false);
   };
@@ -78,12 +83,61 @@ const Reservation = () => {
     setDate(currentDate);
   };
 
-  const handleSearch = (text, isDeparture) => {
-    if (text.length > 0) {
-      setSelectingDeparture(isDeparture);
-      setSearchKeyword(text);
-      setShowMap(true);
+  const searchPlaces = async (text, isDeparture) => {
+    if (!text.trim()) {
+      setSearchResults([]);
+      return;
     }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(text)}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${KAKAO_REST_KEY}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      if (data.documents) {
+        setSearchResults(data.documents);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      Alert.alert('오류', '검색 중 오류가 발생했습니다.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchChange = (text, isDeparture) => {
+    if (isDeparture) {
+      setDeparture(text);
+    } else {
+      setDestination(text);
+    }
+    searchPlaces(text, isDeparture);
+  };
+
+  const handlePlaceSelect = (place, isDeparture) => {
+    if (isDeparture) {
+      setDeparture(place.place_name);
+    } else {
+      setDestination(place.place_name);
+    }
+    setSearchResults([]);
+    
+    setSearchKeyword({
+      place_name: place.place_name,
+      address_name: place.address_name,
+      y: parseFloat(place.y),
+      x: parseFloat(place.x)
+    });
+    
+    setSelectingDeparture(isDeparture);
+    setShowMap(true);
   };
 
   const handleBack = () => {
@@ -103,9 +157,9 @@ const Reservation = () => {
       {showMap ? (
         <View style={styles.mapContainer}>
           <KakaoMap 
-            onLocationSelect={handleLocationSelect}
             initialKeyword={searchKeyword}
-            onBack={handleBack}
+            onLocationSelect={handleLocationSelect}
+            onBack={() => setShowMap(false)}
           />
         </View>
       ) : (
@@ -115,35 +169,69 @@ const Reservation = () => {
               <TextInput 
                 style={styles.locationInput}
                 value={departure}
-                onChangeText={setDeparture}
+                onChangeText={(text) => handleSearchChange(text, true)}
                 placeholder="출발지 검색"
                 returnKeyType="search"
-                onSubmitEditing={() => handleSearch(departure, true)}
               />
               <TouchableOpacity 
                 style={styles.searchButton}
-                onPress={() => handleSearch(departure, true)}
+                onPress={() => searchPlaces(departure, true)}
               >
                 <Ionicons name="search" size={20} color="#666" />
               </TouchableOpacity>
             </View>
 
+            {departure.length > 0 && searchResults.length > 0 && (
+              <View style={styles.searchResultsContainer}>
+                {searchResults.map((place) => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={styles.resultItem}
+                    onPress={() => handlePlaceSelect(place, true)}
+                  >
+                    <Text style={styles.placeName}>{place.place_name}</Text>
+                    <Text style={styles.addressName}>{place.address_name}</Text>
+                    <Text style={styles.distance}>
+                      {(place.distance / 1000).toFixed(2)}km
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
             <View style={styles.searchContainer}>
               <TextInput 
                 style={styles.locationInput}
                 value={destination}
-                onChangeText={setDestination}
+                onChangeText={(text) => handleSearchChange(text, false)}
                 placeholder="도착지 검색"
                 returnKeyType="search"
-                onSubmitEditing={() => handleSearch(destination, false)}
               />
               <TouchableOpacity 
                 style={styles.searchButton}
-                onPress={() => handleSearch(destination, false)}
+                onPress={() => searchPlaces(destination, false)}
               >
                 <Ionicons name="search" size={20} color="#666" />
               </TouchableOpacity>
             </View>
+
+            {destination.length > 0 && searchResults.length > 0 && (
+              <View style={styles.searchResultsContainer}>
+                {searchResults.map((place) => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={styles.resultItem}
+                    onPress={() => handlePlaceSelect(place, false)}
+                  >
+                    <Text style={styles.placeName}>{place.place_name}</Text>
+                    <Text style={styles.addressName}>{place.address_name}</Text>
+                    <Text style={styles.distance}>
+                      {(place.distance / 1000).toFixed(2)}km
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <Text style={styles.label}>날짜 선택</Text>
@@ -374,6 +462,40 @@ const styles = StyleSheet.create({
     right: 15,
     height: 50,
     justifyContent: 'center',
+  },
+  searchResultsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 1000,
+    maxHeight: 200,
+  },
+  resultItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  placeName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  addressName: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  distance: {
+    fontSize: 12,
+    color: '#999',
   },
 });
 
