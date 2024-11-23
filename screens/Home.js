@@ -7,15 +7,22 @@ import { useFocusEffect } from '@react-navigation/native';
 
 // 패키지 타입 상수 정의 - API 명세에 맞게 수정
 const PACKAGE_TYPES = {
-  LOCAL: "LOCAL",      // 현지인 코스
-  HIDDEN: "HIDDEN",    // 숨겨진 명소 코스
-  THEME: "THEME"       // 테마 코스
+  HEALING: "HEALING",   // 힐링
+  COUPLE: "COUPLE",     // 연인
+  ACTIVITY: "ACTIVITY", // 액티비티
+  RETRO: "RETRO",      // 레트로
+  GOLMOK: "GOLMOK",    // 골목
+  LOCAL: "LOCAL",       // 현지인
+  THEME: "THEME",       // 사진
+  SHIP: "SHIP"         // 섬
 };
 
 const Home = ({ route, navigation }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [packageList, setPackageList] = useState([]);
+  const [recommendedPackages, setRecommendedPackages] = useState([]);
+  const [recommendLoading, setRecommendLoading] = useState(true);
 
   // 앱 시작시 로그인 상태 확인
   useEffect(() => {
@@ -70,12 +77,22 @@ const Home = ({ route, navigation }) => {
   // 패키지 타입별 제목 반환
   const getPackageTitle = (type) => {
     switch(type) {
+      case PACKAGE_TYPES.HEALING:
+        return '힐링';
+      case PACKAGE_TYPES.COUPLE:
+        return '연인';
+      case PACKAGE_TYPES.ACTIVITY:
+        return '액티비티';
+      case PACKAGE_TYPES.RETRO:
+        return '레트로';
+      case PACKAGE_TYPES.GOLMOK:
+        return '골목';
       case PACKAGE_TYPES.LOCAL:
-        return '현지인 코스';
-      case PACKAGE_TYPES.HIDDEN:
-        return '숨겨진 명소 코스';
+        return '현지인';
       case PACKAGE_TYPES.THEME:
-        return '테마 코스';
+        return '사진';
+      case PACKAGE_TYPES.SHIP:
+        return '섬';
       default:
         return '패키지';
     }
@@ -134,6 +151,37 @@ const Home = ({ route, navigation }) => {
     checkLoginStatus();
   }, []);
 
+  // 추천 패키지 불러오기 함수 추가
+  const fetchRecommendedPackages = async () => {
+    try {
+      setRecommendLoading(true);
+      const url = 'http://3.107.189.243:8080/api/package/recommended';
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API 에러 - 상태 코드: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRecommendedPackages(data);
+    } catch (error) {
+      console.log('추천 패키지 로딩 에러:', error);
+    } finally {
+      setRecommendLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 추천 패키지 로드
+  useEffect(() => {
+    fetchRecommendedPackages();
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
@@ -168,7 +216,7 @@ const Home = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* 검색바 */}
+        {/* 색바 */}
         <View style={styles.searchContainer}>
           <Image
             source={require('../assets/homeassist.png')}
@@ -188,52 +236,97 @@ const Home = ({ route, navigation }) => {
 
         {/* 서비스 메뉴 */}
         <View style={styles.serviceMenu}>
-          <Text style={styles.sectionTitle}>패키지</Text>
-          
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => fetchPackagesByType(PACKAGE_TYPES.LOCAL)}
-          >
-            <Ionicons name="leaf-outline" size={24} color="black" />
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>현지인 코스</Text>
-              <Text style={styles.menuSubtitle}>현지인 분께서 관광지 오마카세를 선물합니다.</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.packageGrid}>
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.HEALING)}
+            >
+              <Ionicons name="leaf" size={24} color="#4CAF50" />
+              <Text style={styles.packageItemText}>힐링</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => fetchPackagesByType(PACKAGE_TYPES.HIDDEN)}
-          >
-            <Ionicons name="map" size={24} color="black" />
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>숨겨진 명소 코스</Text>
-              <Text style={styles.menuSubtitle}>숨은 명소를 속들이 찾아드립니다!</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.COUPLE)}
+            >
+              <Ionicons name="heart" size={24} color="#E91E63" />
+              <Text style={styles.packageItemText}>연인</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.menuItem}
-            onPress={() => fetchPackagesByType(PACKAGE_TYPES.THEME)}
-          >
-            <Ionicons name="people-outline" size={24} color="black" />
-            <View style={styles.menuTextContainer}>
-              <Text style={styles.menuTitle}>테마 코스</Text>
-              <Text style={styles.menuSubtitle}>혼자, 친구와 함께, 연인과 함께</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.ACTIVITY)}
+            >
+              <Ionicons name="bicycle" size={26} color="#3c18a4" />
+              <Text style={styles.packageItemText}>액티비티</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.RETRO)}
+            >
+              <Ionicons name="time-outline" size={24} color="#86440d" />
+              <Text style={styles.packageItemText}>레트로</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.GOLMOK)}
+            >
+              <Ionicons name="map-outline" size={24} color="#cfb74d" />
+              <Text style={styles.packageItemText}>골목</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.LOCAL)}
+            >
+              <Ionicons name="person" size={24} color="#08227b" />
+              <Text style={styles.packageItemText}>현지인</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.THEME)}
+            >
+              <Ionicons name="camera" size={24} color="#696664" />
+              <Text style={styles.packageItemText}>사진</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.packageItem}
+              onPress={() => fetchPackagesByType(PACKAGE_TYPES.SHIP)}
+            >
+              <Ionicons name="boat-outline" size={24} color="#008ce6" />
+              <Text style={styles.packageItemText}>섬</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* 추천 패키지 섹션을 맨 아래로 이동 */}
+        {/* 추약하기 버튼 위치 이동 */}
+        <TouchableOpacity 
+          style={[styles.reservationButton, { marginHorizontal: 20, marginVertical: 15 }]}
+          onPress={() => navigation.navigate('Reservation')}
+        >
+          <View style={styles.buttonContent}>
+            <View style={styles.buttonLeft}>
+              <Ionicons name="car" size={24} color="black" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>솜카 이용 예약하기</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="black" />
+          </View>
+        </TouchableOpacity>
+
+        {/* 추천 패키지 섹션 */}
         <View style={[styles.recommendSection, styles.lastSection]}>
           <Text style={styles.sectionTitle}>추천 상품</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {loading ? (
+            {recommendLoading ? (
               <Text>로딩 중...</Text>
-            ) : packageList.length > 0 ? (
-              packageList.map((pkg, index) => (
+            ) : recommendedPackages.length > 0 ? (
+              recommendedPackages.map((pkg, index) => (
                 <TouchableOpacity 
-                  key={index} 
+                  key={`${pkg.id}_${index}`} 
                   style={styles.recommendCard}
                   onPress={() => navigation.navigate('Detail', { itemId: pkg.id })}
                 >
@@ -252,7 +345,12 @@ const Home = ({ route, navigation }) => {
                   {pkg.tags && (
                     <View style={styles.tagContainer}>
                       {pkg.tags.map((tag, tagIndex) => (
-                        <Text key={tagIndex} style={styles.tagText}>#{tag}</Text>
+                        <Text 
+                          key={`${pkg.id}_tag_${tagIndex}`} 
+                          style={styles.tagText}
+                        >
+                          #{tag}
+                        </Text>
                       ))}
                     </View>
                   )}
@@ -263,25 +361,54 @@ const Home = ({ route, navigation }) => {
               ))
             ) : (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>현재 추천 상품을 불러올 수 없습니다.</Text>
-                <Text style={styles.errorSubText}>잠시 후 다시 시도해주세요.</Text>
+                <Text style={styles.errorText}>추천 상품이 없습니다.</Text>
+                <Text style={styles.errorSubText}>나중에 다시 확인해주세요.</Text>
               </View>
             )}
           </ScrollView>
         </View>
       </ScrollView>
-
-      {/* 예약하기 버튼 */}
-      <TouchableOpacity 
-        style={styles.reservationButton}
-        onPress={() => navigation.navigate('Reservation')}
-      >
-        <View style={styles.buttonContent}>
-          <Ionicons name="car" size={24} color="white" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>솜카 이용 예약하기</Text>
-          <Ionicons name="chevron-forward" size={24} color="white" />
-        </View>
-      </TouchableOpacity>
+      
+      {/* 하단 탭 바 추가 */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Ionicons name="home-outline" size={24} color="#4CAF50" />
+          <Text style={[styles.tabText, styles.tabTextActive]}>홈</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => navigation.navigate('Search')}
+        >
+          <Ionicons name="search-outline" size={24} color="#666" />
+          <Text style={styles.tabText}>검색</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => navigation.navigate('ReservationList')}
+        >
+          <Ionicons name="calendar-outline" size={24} color="#666" />
+          <Text style={styles.tabText}>예약정보</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => {
+            if (isLoggedIn) {
+              navigation.navigate('MyPage');
+            } else {
+              navigation.navigate('Kakao');
+            }
+          }}
+        >
+          <Ionicons name="person-outline" size={24} color="#666" />
+          <Text style={styles.tabText}>마이페이지</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -459,11 +586,7 @@ const styles = StyleSheet.create({
     marginBottom: 20, // 마지막 섹션 아래 여백 추가
   },
   reservationButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#4CAF50',  // 초록색 계열
+    backgroundColor: '#E8F5E9',
     borderRadius: 12,
     padding: 15,
     shadowColor: '#000',
@@ -479,15 +602,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  buttonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',  // 가운데 정렬
   },
   buttonIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
-    flex: 1,  // 텍스트가 아이콘들 사이에서 늘어나도록
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingVertical: 8,
+    paddingBottom: 8, // 아이폰 하단 여백 고려
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabText: {
+    fontSize: 12,
+    marginTop: 3,
+    color: '#666',
+  },
+  tabTextActive: {
+    color: '#4CAF50',
+  },
+  packageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  packageItem: {
+    width: '23%',
+    aspectRatio: 1,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  packageItemText: {
+    marginTop: 8,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

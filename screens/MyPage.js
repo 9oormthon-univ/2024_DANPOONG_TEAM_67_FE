@@ -3,34 +3,26 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView } from 'r
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-const MyPage = () => {
-  const navigation = useNavigation();
-  const [userEmail, setUserEmail] = useState('사용자@example.com');
+const MyPage = ({ navigation }) => {
+  const [userEmail, setUserEmail] = useState('');
 
-  // 컴포넌트 마운트 시 로그인 상태 확인
   useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  const checkLoginStatus = async () => {
-    try {
-      const userToken = await AsyncStorage.getItem('userToken');
-      if (!userToken) {
-        // 토큰이 없으면 로그인 페이지로 이동
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
+    const getEmail = async () => {
+      try {
+        const email = await AsyncStorage.getItem('userEmail');
+        console.log('저장된 이메일:', email);  // 디버깅용
+        if (email) {
+          setUserEmail(email);
+        }
+      } catch (error) {
+        console.log('이메일 가져오기 실패:', error);
       }
-    } catch (error) {
-      console.log('로그인 상태 확인 에러:', error);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    }
-  };
+    };
+
+    getEmail();  // 함수 즉시 실행
+  }, []);  // 빈 배열을 넣어 컴포넌트 마운트 시에만 실행
 
   const handleLogout = async () => {
     try {
@@ -89,7 +81,9 @@ const MyPage = () => {
         <View style={styles.profileContainer}>
           <Ionicons name="person-circle" size={60} color="black" />
           <View style={styles.userInfo}>
-            <Text style={styles.emailText}>{userEmail}</Text>
+            <Text style={styles.emailText}>
+              {userEmail || '이메일 로딩 중...'}  {/* 이메일이 없을 때 표시할 텍스트 */}
+            </Text>
           </View>
           <Ionicons 
             name="chevron-forward" 
@@ -220,7 +214,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   emailText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#333',
   },
   arrowIcon: {

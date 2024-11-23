@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
-  Image,
   Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -18,31 +17,48 @@ const WriteReview = () => {
   const navigation = useNavigation();
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reservationData, setReservationData] = useState(null);
+
+  // 예약 정보 조회
+  useEffect(() => {
+    const fetchReservationData = async () => {
+      try {
+        const userToken = await AsyncStorage.getItem('userToken');
+        const response = await fetch('http://3.107.189.243:8080/api/review/reservation', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${userToken}`,
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('예약 데이터를 가져오는데 실패했습니다.');
+        }
+
+        const data = await response.json();
+        setReservationData(data);
+      } catch (error) {
+        console.error('예약 데이터 조회 에러:', error);
+        Alert.alert('오류', '예약 정보를 불러오는데 실패했습니다.');
+      }
+    };
+
+    fetchReservationData();
+  }, []);
 
   const handleSubmitReview = async () => {
-    if (review.trim().length < 10) {
-      Alert.alert('알림', '리뷰를 10자 이상 작성해주세요.');
+    if (!review.trim()) {
+      Alert.alert('알림', '리뷰 내용을 입력해주세요.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
       const userToken = await AsyncStorage.getItem('userToken');
-      const currentDate = new Date().toISOString().split('T')[0];
-      
       const reviewData = {
-        title: "여행 패키지 리뷰",
+        reservationId: reservationData?.reservationId,
         content: review,
-        rating: rating,
-        date: currentDate,
-        image: "패키지_이미지_URL",
-        location: "출발지",
-        destination: "도착지"
+        rating: rating
       };
-
-      console.log('전송하는 데이터:', reviewData);
-      console.log('토큰:', userToken);
 
       const response = await fetch('http://3.107.189.243:8080/api/reviews', {
         method: 'POST',
@@ -53,102 +69,73 @@ const WriteReview = () => {
         body: JSON.stringify(reviewData),
       });
 
-      const responseData = await response.json();
-      console.log('서버 응답:', response.status, responseData);
-
       if (response.ok) {
-        Alert.alert(
-          '성공', 
-          '후기가 등록되었습니다!',
-          [
-            {
-              text: '확인',
-              onPress: () => navigation.navigate('MyReview')
-            }
-          ]
-        );
+        Alert.alert('성공', '리뷰가 등록되었습니다.', [
+          { text: '확인', onPress: () => navigation.goBack() }
+        ]);
       } else {
-        throw new Error(`리뷰 등록 실패: ${JSON.stringify(responseData)}`);
+        throw new Error('리뷰 등록에 실패했습니다.');
       }
     } catch (error) {
-      console.error('리뷰 제출 에러 상세:', error);
-      Alert.alert('오류', `리뷰 등록 중 문제가 발생했습니다. ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
+      Alert.alert('오류', '리뷰 등록 중 문제가 발생했습니다.');
     }
   };
-
-  const renderStars = () => {
-    return (
-      <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => setRating(star)}
-          >
-            <Ionicons
-              name={star <= rating ? 'star' : 'star-outline'}
-              size={30}
-              color="#FFD700"
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  };
-
-  const renderHeader = () => (
-    <View>
-      <View style={styles.headerTop}>
-        <View style={styles.headerLeft}>
-          <Image 
-            source={require('../assets/logo.png')} 
-            style={styles.logo}
-          />
-          <Text style={styles.logoText}>솜길</Text>
-        </View>
-        <TouchableOpacity onPress={() => navigation.navigate('MyPage')}>
-        <Ionicons name="person-circle-outline" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.headerBottom}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {renderHeader()}
-        <View style={styles.content}>
-          <Text style={styles.ratingText}>만족도를 입력해주세요!</Text>
-          {renderStars()}
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="이곳에 리뷰를 작성해주세요."
-              multiline
-              numberOfLines={4}
-              value={review}
-              onChangeText={setReview}
-            />
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmitReview}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.submitButtonText}>등록</Text>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
         </View>
+
+        {/* 예약 정보 */}
+        <View style={styles.reservationInfo}>
+          <Text style={styles.packageName}>{reservationData?.packageName || '제주의보석'}</Text>
+          <Text style={styles.reservationDate}>{reservationData?.reservationDate || '2024.12.26'}</Text>
+          <Text style={styles.details}>
+            {reservationData?.details || '성인3, 아동2, 유아1'}
+          </Text>
+        </View>
+
+        {/* 별점 */}
+        <Text style={styles.ratingTitle}>만족도를 입력해주세요!</Text>
+        <View style={styles.starsContainer}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <TouchableOpacity
+              key={star}
+              onPress={() => setRating(star)}
+            >
+              <Ionicons
+                name={star <= rating ? 'star' : 'star-outline'}
+                size={30}
+                color="#FFD700"
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* 리뷰 입력 */}
+        <View style={styles.reviewContainer}>
+          <Text style={styles.reviewTitle}>어떤점이 마음에 드셨나요?</Text>
+          <TextInput
+            style={styles.reviewInput}
+            placeholder="이곳에 리뷰를 작성해주세요."
+            multiline
+            value={review}
+            onChangeText={setReview}
+          />
+        </View>
+
+        {/* 등록 버튼 */}
+        <TouchableOpacity 
+          style={styles.submitButton}
+          onPress={handleSubmitReview}
+        >
+          <Text style={styles.submitButtonText}>등록</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -161,59 +148,48 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? 30 : 0,
+    padding: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 0,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  header: {
+    marginBottom: 20,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  reservationInfo: {
+    marginBottom: 30,
   },
-  logo: {
-    width: 30,
-    height: 30,
-    marginRight: 8,
-  },
-  logoText: {
+  packageName: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  loginText: {
-    fontSize: 16,
-  },
-  headerBottom: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  backButton: {
-    width: 30,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 10,
-  },
-  ratingText: {
-    fontSize: 16,
     marginBottom: 10,
+  },
+  reservationDate: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  details: {
+    fontSize: 16,
+    color: '#666',
+  },
+  ratingTitle: {
+    fontSize: 18,
+    fontWeight: '500',
     textAlign: 'center',
+    marginBottom: 15,
   },
   starsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
   },
-  inputContainer: {
-    marginTop: 20,
+  reviewContainer: {
+    marginBottom: 30,
   },
-  input: {
+  reviewTitle: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  reviewInput: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
@@ -222,14 +198,10 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4CAF50',
     padding: 15,
     borderRadius: 8,
-    marginTop: 20,
     alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
   },
   submitButtonText: {
     color: '#fff',

@@ -7,53 +7,63 @@ import {
   TouchableOpacity, 
   ScrollView,
   Image,
-  Platform 
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 
 const ReservationList = () => {
   const navigation = useNavigation();
   const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // API로부터 예약 내역을 가져오는 함수
-  // 실제 API 연동 시 사용할 함수
   const fetchReservations = async () => {
     try {
-      // const response = await fetch('YOUR_API_ENDPOINT');
-      // const data = await response.json();
-      // setReservations(data);
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) {
+        Alert.alert('알림', '로그인이 필요한 서비스입니다.');
+        navigation.navigate('Kakao');
+        return;
+      }
 
-      // 임시 더미 데이터
-      const dummyData = [
-        {
-          id: 1,
-          packageName: '제주의 보석',
-          period: '2024.11.23-2024.11.24',
-          details: '성인 1인,유아2인,아동3인',
-          price: '1,000,000원',
-          status: '예약중',
-          // image: require('../assets/jeju.jpg')
+      const response = await fetch('http://3.107.189.243:8080/api/reservation/list', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Content-Type': 'application/json',
         },
-        {
-          id: 2,
-          packageName: '속초의 크리스마스',
-          period: '2024.12.25-2024.12.26',
-          details: '성인 2인,유아1인',
-          price: '5,000,000원',
-          status: '예약완료',
-          // image: require('../assets/sokcho.jpg')
-        },
-      ];
-      setReservations(dummyData);
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReservations(data);
+      } else {
+        throw new Error('예약 내역을 불러오는데 실패했습니다.');
+      }
     } catch (error) {
       console.error('예약 내역 조회 실패:', error);
+      Alert.alert('오류', '예약 내역을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchReservations();
   }, []);
+
+  // 화면이 포커스될 때마다 예약 내역 새로고침
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchReservations();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -98,27 +108,33 @@ const ReservationList = () => {
       </TouchableOpacity>
 
       <ScrollView style={styles.container}>
-        {reservations.map((reservation) => (
-          <View key={reservation.id} style={styles.reservationCard}>
-            <View style={styles.cardContent}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.packageName}>{reservation.packageName}</Text>
-                <Text 
-                  style={[
-                    styles.status,
-                    { color: getStatusColor(reservation.status) }
-                  ]}
-                >
-                  {reservation.status}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+          </View>
+        ) : reservations.length > 0 ? (
+          reservations.map((reservation) => (
+            <View key={reservation.id} style={styles.reservationCard}>
+              <View style={styles.cardContent}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.packageName}>{reservation.packageName}</Text>
+                  <Text style={[styles.status, { color: getStatusColor(reservation.status) }]}>
+                    {reservation.status}
+                  </Text>
+                </View>
+                <Text style={styles.period}>
+                  {reservation.reservationDate}
+                </Text>
+                <Text style={styles.details}>
+                  {`성인 ${reservation.adultCount}인, 아동 ${reservation.childCount}인, 유아 ${reservation.infantCount}인`}
+                </Text>
+                <Text style={styles.price}>
+                  {`${reservation.totalPrice.toLocaleString()}원`}
                 </Text>
               </View>
-              <Text style={styles.period}>{reservation.period}</Text>
-              <Text style={styles.details}>{reservation.details}</Text>
-              <Text style={styles.price}>{reservation.price}</Text>
             </View>
-          </View>
-        ))}
-        {reservations.length === 0 && (
+          ))
+        ) : (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>예약 내역이 없습니다.</Text>
           </View>
@@ -228,6 +244,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

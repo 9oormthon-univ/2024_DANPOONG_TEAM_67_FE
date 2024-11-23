@@ -37,23 +37,44 @@ const Kakao = () => {
         console.log('서버 응답 성공:', response.data);
 
         if (response.data && response.data.token) {
-          await AsyncStorage.setItem('userToken', response.data.token);
-          await AsyncStorage.setItem('isLoggedIn', 'true');
-          
-          console.log('토큰 저장 완료');
-          console.log('홈 화면으로 이동 시도');
+          try {
+            await AsyncStorage.setItem('userToken', response.data.token);
+            await AsyncStorage.setItem('userEmail', response.data.email);
+            await AsyncStorage.setItem('userNickname', response.data.nickname);
+            await AsyncStorage.setItem('isLoggedIn', 'true');
+            
+            console.log('저장된 데이터 확인:');
+            console.log('토큰:', response.data.token);
+            console.log('이메일:', response.data.email);
+            console.log('닉네임:', response.data.nickname);
 
-          navigation.reset({
-            index: 0,
-            routes: [{ 
-              name: 'Home', 
-              params: { 
-                isLoggedIn: true, 
-                refresh: true 
-              }
-            }],
-          });
-          return false;
+            // route.params 확인
+            const { route } = navigation.getState();
+            const returnScreen = route?.params?.returnScreen;
+            const returnParams = route?.params?.returnParams;
+            
+            console.log('돌아갈 화면:', returnScreen);
+            console.log('전달할 파라미터:', returnParams);
+
+            if (returnScreen) {
+              // 이전 화면으로 돌아가기
+              navigation.reset({
+                index: 0,
+                routes: [
+                  { name: returnScreen, params: { ...returnParams, refresh: true } }
+                ],
+              });
+            } else {
+              // 기본적으로 Home으로 이동
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home', params: { isLoggedIn: true, refresh: true } }],
+              });
+            }
+            return false;
+          } catch (error) {
+            console.log('데이터 저장 중 에러:', error);
+          }
         }
       } catch (error) {
         console.log('=== 에러 발생 ===');

@@ -4,13 +4,13 @@
     "slug": "Somgil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/Area.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "somgil",
     "splash": {
-      "image": "./assets/splashLogo.png",
-      "resizeMode": "contain",
+      "image": "./assets/Area.png", 
+      "resizeMode": "contain", 
       "backgroundColor": "#ffffff"
     },
     "ios": {

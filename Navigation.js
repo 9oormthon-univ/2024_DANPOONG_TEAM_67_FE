@@ -14,6 +14,7 @@ import Map from './screens/KakaoMap';
 import WriteReview from './screens/WriteReview';
 import UserInfo from './screens/UserInfo';
 import MyReview from './screens/MyReview';
+import Search from './screens/Search';
 
 
 const Stack = createStackNavigator();
@@ -40,6 +41,7 @@ const Navigation = () => {
       <Stack.Screen name="WriteReview" component={WriteReview} />
       <Stack.Screen name="UserInfo" component={UserInfo} />
       <Stack.Screen name="MyReview" component={MyReview} />
+      <Stack.Screen name="Search" component={Search} />
     </Stack.Navigator>
   );
 };

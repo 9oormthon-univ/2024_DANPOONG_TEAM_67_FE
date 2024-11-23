@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,26 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const UserInfo = () => {
-  const navigation = useNavigation();
+const UserInfo = ({ navigation }) => {
+  const [userNickname, setUserNickname] = useState('');
+
+  useEffect(() => {
+    const getNickname = async () => {
+      try {
+        const nickname = await AsyncStorage.getItem('userNickname');
+        console.log('저장된 닉네임:', nickname);  // 디버깅용
+        if (nickname) {
+          setUserNickname(nickname);
+        }
+      } catch (error) {
+        console.log('닉네임 가져오기 실패:', error);
+      }
+    };
+
+    getNickname();  // 함수 즉시 실행
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,7 +62,9 @@ const UserInfo = () => {
       <View style={styles.profileSection}>
         <Ionicons name="person-circle" size={80} color="black" />
         <View style={styles.nameSection}>
-          <Text style={styles.userName}>사용자</Text>
+          <Text style={styles.userName}>
+            {userNickname || '사용자'}  {/* 닉네임이 없을 경우 '사용자'로 표시 */}
+          </Text>
           <TouchableOpacity>
             <Ionicons name="pencil" size={20} color="black" />
           </TouchableOpacity>
