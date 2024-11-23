@@ -1,58 +1,67 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-const REST_API_KEY = "9a65039b05d81166bcf8df1dc82404c9";
-const REDIRECT_URI = "http://localhost:19006/Home";
+const KAKAO_AUTH_URL = "https://kauth.kakao.com/oauth/authorize";
+const CLIENT_ID = "4f9210dfadd4560e171c28adee805511";
+const REDIRECT_URI = "http://localhost:3000/api/users/login/oauth/kakao";
+const BACKEND_URL = "http://3.107.189.243:8080";
 
 const Kakao = () => {
   const navigation = useNavigation();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleNavigationStateChange = async (navState) => {
+    console.log('=== 카카오 로그인 프로세스 시작 ===');
     console.log('현재 URL:', navState.url);
     
-    if (navState.url.includes("code=") && !isProcessing) {
-      setIsProcessing(true);
+    if (navState.url.includes('/api/users/login/oauth/kakao') && navState.url.includes('code=')) {
       try {
         const code = navState.url.split('code=')[1]?.split('&')[0];
-        if (!code) throw new Error('인증 코드를 찾을 수 없습니다');
-
-        const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-          },
-          body: `grant_type=authorization_code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}&code=${code}`,
-        });
-
-        const tokenData = await tokenResponse.json();
+        console.log('인증 코드:', code);
         
-        if (tokenData.access_token) {
-          await AsyncStorage.setItem('userToken', tokenData.access_token);
-          console.log('액세스 토큰 저장 성공');
+        const response = await axios.get(
+          `${BACKEND_URL}/api/users/login/kakao`, 
+          {
+            params: { code },
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        console.log('서버 응답 성공:', response.data);
+
+        if (response.data && response.data.token) {
+          await AsyncStorage.setItem('userToken', response.data.token);
+          await AsyncStorage.setItem('isLoggedIn', 'true');
           
+          console.log('토큰 저장 완료');
+          console.log('홈 화면으로 이동 시도');
+
           navigation.reset({
             index: 0,
-            routes: [{ name: 'Home' }],
+            routes: [{ 
+              name: 'Home', 
+              params: { 
+                isLoggedIn: true, 
+                refresh: true 
+              }
+            }],
           });
-        } else {
-          throw new Error('토큰 교환 실패');
+          return false;
         }
       } catch (error) {
-        console.error('카카오 로그인 오류:', error);
-        await AsyncStorage.removeItem('userToken');
-        navigation.replace('Home');
-      } finally {
-        setIsProcessing(false);
+        console.log('=== 에러 발생 ===');
+        console.log('에러 내용:', error);
+        navigation.navigate('Home');
       }
     }
-
-    if (navState.code === -6 && navState.url.includes("code=")) {
-      return;
-    }
+    return true;
   };
 
   return (
@@ -60,12 +69,24 @@ const Kakao = () => {
       <WebView
         style={styles.webview}
         source={{
-          uri: `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}`,
+          uri: `${KAKAO_AUTH_URL}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`,
+          method: 'GET'
         }}
         javaScriptEnabled={true}
         onNavigationStateChange={handleNavigationStateChange}
         domStorageEnabled={true}
+        onLoadStart={() => setIsLoading(true)}
+        onLoadEnd={() => setIsLoading(false)}
+        onError={() => {
+          navigation.navigate('Home');
+        }}
+        renderError={() => <View />}
       />
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+        </View>
+      )}
     </View>
   );
 };
@@ -73,10 +94,20 @@ const Kakao = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
   webview: {
     flex: 1,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
   },
 });
 

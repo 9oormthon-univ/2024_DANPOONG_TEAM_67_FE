@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,17 +44,32 @@ const MyPage = () => {
     }
   };
 
+  // 리뷰 작성 페이지로 이동하는 함수
+  const handleReviewPress = () => {
+    console.log('리뷰 버튼 클릭');
+    navigation.navigate('WriteReview');
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <TouchableOpacity 
+          style={styles.headerLeft}
+          onPress={() => {
+            console.log('홈으로 이동 시도');  // 디버깅용
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          }}
+        >
           <Image 
             source={require('../assets/logo.png')} 
             style={styles.logo}
           />
           <Text style={styles.headerTitle}>솜길</Text>
-        </View>
+        </TouchableOpacity>
         <Ionicons name="person-circle-outline" size={24} color="black" />
       </View>
 
@@ -67,10 +82,23 @@ const MyPage = () => {
       </TouchableOpacity>
 
       {/* 프로필 섹션 */}
-      <View style={styles.profileSection}>
-        <Ionicons name="person-circle" size={60} color="black" />
-        <Text style={styles.emailText}>{userEmail}</Text>
-      </View>
+      <TouchableOpacity 
+        style={styles.profileSection}
+        onPress={() => navigation.navigate('UserInfo')}
+      >
+        <View style={styles.profileContainer}>
+          <Ionicons name="person-circle" size={60} color="black" />
+          <View style={styles.userInfo}>
+            <Text style={styles.emailText}>{userEmail}</Text>
+          </View>
+          <Ionicons 
+            name="chevron-forward" 
+            size={24} 
+            color="#999"
+            style={styles.arrowIcon}
+          />
+        </View>
+      </TouchableOpacity>
 
       {/* 예약 상태 */}
       <View style={styles.statusContainer}>
@@ -101,9 +129,30 @@ const MyPage = () => {
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color="black" />
-          <Text style={styles.menuText}>회원 정보 변경</Text>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleReviewPress}
+        >
+          <Ionicons name="chatbox-outline" size={24} color="#333" />
+          <Text style={styles.menuText}>작성한 리뷰</Text>
+          <Ionicons 
+            name="chevron-forward-outline" 
+            size={24} 
+            color="#999"
+            style={styles.menuArrow}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => {
+            // 여기에 약관 및 정책 페이지로 이동하는 로직 추가
+            // navigation.navigate('Terms') 등
+            console.log('약관 및 정책');
+          }}
+        >
+          <Ionicons name="document-text-outline" size={24} color="black" />
+          <Text style={styles.menuText}>약관 및 정책</Text>
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
 
@@ -115,14 +164,8 @@ const MyPage = () => {
           <Text style={styles.menuText}>로그아웃</Text>
           <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="close-circle-outline" size={24} color="black" />
-          <Text style={styles.menuText}>회원탈퇴</Text>
-          <Ionicons name="chevron-forward" size={24} color="black" />
-        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -141,6 +184,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 10,
   },
   logo: {
     width: 40,
@@ -156,12 +200,31 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   profileSection: {
+    padding: 30,
+    paddingVertical: 25,
+    paddingTop: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    marginBottom: 20,
+  },
+  profileContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    height: 60,
+    justifyContent: 'space-between',
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 20,
+    marginRight: 10,
   },
   emailText: {
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 18,
+    color: '#333',
+  },
+  arrowIcon: {
+    marginLeft: 'auto',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -194,7 +257,7 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 25,
     backgroundColor: '#f0f8f0',
     marginBottom: 10,
     marginHorizontal: 15,
@@ -204,6 +267,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 15,
     fontSize: 16,
+  },
+  menuArrow: {
+    marginLeft: 'auto',
   },
 });
 

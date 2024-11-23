@@ -1,61 +1,63 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const data = [
-  { id: '1', title: '제주의 보석', image: require('../assets/icon.png'), reviews: 384 },
-  { id: '2', title: '송도의 크리스마스', image: require('../assets/icon.png'), reviews: 223 },
-  { id: '3', title: '인천 트래킹', image: require('../assets/icon.png'), reviews: 25 },
-  { id: '4', title: '강화도 루지 마스터', image: require('../assets/icon.png'), reviews: 87 },
-];
-
-const Package1 = () => {
+const Package1 = ({ route }) => {
   const navigation = useNavigation();
+  const { packageType, packageTitle, packageList } = route.params;
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Ionicons name="arrow-back" size={24} color="black" />
-      </TouchableOpacity>
-      <Text style={styles.logoText}>솜길</Text>
-      <View style={styles.emptySpace} />
-    </View>
-  );
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => navigation.navigate('Detail', { itemId: item.id })}
-    >
-      <Image source={item.image} style={styles.image} />
-      <View style={styles.cardContent}>
-        <View style={styles.ratingContainer}>
-          <Text style={styles.rating}>★★★★★</Text>
-          <Text style={styles.reviewCount}>({item.reviews})</Text>
-        </View>
-        <View style={styles.reviewContainer}>
-          <Text style={styles.reviewText}>리뷰 {item.reviews}</Text>
-        </View>
-        <Text style={styles.title}>{item.title}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  // Home에서 전달받은 packageList를 바로 사용하도록 수정
+  useEffect(() => {
+    if (packageList) {
+      setPackages(packageList);
+      setLoading(false);
+    }
+  }, [packageList]);
 
   return (
-    <View style={styles.container}>
-      {renderHeader()}
-      <Text style={styles.pageTitle}>숨겨진 명소 코스</Text>
-      <FlatList
-        key={'two-column'}
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.list}
-      />
-    </View>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{packageTitle}</Text>
+      </View>
+
+      <View style={styles.packagesContainer}>
+        {loading ? (
+          <Text style={styles.loadingText}>로딩 중...</Text>
+        ) : packages.length > 0 ? (
+          packages.map((pkg, index) => (
+            <TouchableOpacity 
+              key={index}
+              style={styles.packageCard}
+              onPress={() => navigation.navigate('Detail', { 
+                packageId: pkg.id,
+                packageData: pkg 
+              })}
+            >
+              <Text style={styles.packageTitle}>{pkg.name}</Text>
+              <Text style={styles.packageDescription}>{pkg.description}</Text>
+              <View style={styles.packageInfo}>
+                <Text style={styles.packagePrice}>
+                  ₩{pkg.price?.toLocaleString() || '가격 정보 없음'}
+                </Text>
+                <Text style={styles.reviewInfo}>
+                  평점: {pkg.reviewRating || 0} ({pkg.reviewNumber || 0}개의 리뷰)
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.noDataText}>
+            {packageTitle}에 해당하는 패키지가 없습니다.
+          </Text>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -63,78 +65,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 40,
   },
-  headerContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    padding: 15,
+    paddingTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  backButton: {
-    width: 30,
-  },
-  logoText: {
-    flex: 1,
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    marginLeft: 15,
   },
-  emptySpace: {
-    width: 30,
-  },
-  pageTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  packagesContainer: {
     padding: 15,
   },
-  list: {
-    padding: 10,
+  loadingText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
   },
-  row: {
-    justifyContent: 'space-between',
+  noDataText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
   },
-  card: {
-    width: '48%',
-    marginBottom: 15,
-    backgroundColor: '#fff',
-  },
-  image: {
-    width: '100%',
-    height: 150,
+  packageCard: {
+    backgroundColor: '#f5f5f5',
     borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
   },
-  cardContent: {
-    marginTop: 5,
+  packageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    color: '#FFD700',
-    fontSize: 14,
-    marginRight: 3,
-  },
-  reviewCount: {
-    color: '#666',
-    fontSize: 14,
-  },
-  reviewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reviewText: {
+  packageDescription: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 10,
   },
-  title: {
+  packageInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  packagePrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 3,
+    color: '#2E7D32',
   },
+  reviewInfo: {
+    fontSize: 14,
+    color: '#666',
+  }
 });
 
 export default Package1;

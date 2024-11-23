@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Platform, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, SafeAreaView, Platform, Modal, Alert, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -147,12 +147,35 @@ const Reservation = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Ionicons name="arrow-back" size={24} onPress={() => navigation.goBack()} />
-        <Text style={styles.logo}>솜길</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.login}>     </Text>
+        <TouchableOpacity 
+          style={styles.headerLeft}
+          onPress={() => {
+            console.log('홈으로 이동 시도');  // 디버깅용
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          }}
+        >
+          <Image 
+            source={require('../assets/logo.png')} 
+            style={styles.logo}
+          />
+          <Text style={styles.headerTitle}>솜길</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('MyPage')}
+        >
+          <Ionicons name="person-circle-outline" size={24} color="black" />
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
 
       {showMap ? (
         <View style={styles.mapContainer}>
@@ -306,7 +329,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? 40 : 0,
+    paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   container: {
     flex: 1,
@@ -350,7 +373,7 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 5,
     padding: 10,
-    height: 160,
+    height: 150,
     marginBottom: 20,
   },
   reserveButton: {
@@ -426,16 +449,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#e8f4fd',
+    padding: 15,
+    paddingTop: 25
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,  // 터치 영역 확보
   },
   logo: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  login: {
-    fontSize: 16,
-    color: '#000',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 100,  // 위치 조정
+    left: 8,
+    padding: 10,
+    zIndex: 1,  
   },
   locationContainer: {
     flexDirection: 'column',

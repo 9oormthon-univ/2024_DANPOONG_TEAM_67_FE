@@ -71,12 +71,31 @@ const ReservationList = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+        <View style={styles.headerLeft}>
+          <Image 
+            source={require('../assets/logo.png')} 
+            style={styles.logo}
+          />
+          <Text style={styles.headerTitle}>솜길</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('MyPage')}
+          style={styles.loginButton}
+        >
+          <Ionicons 
+            name="person-circle-outline" 
+            size={28} 
+            color="black"
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>전체내역</Text>
-        <View style={{ width: 24 }} />
       </View>
+
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
 
       <ScrollView style={styles.container}>
         {reservations.map((reservation) => (
@@ -117,15 +136,31 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingTop: 35,
+    backgroundColor: '#fff',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 5,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  backButton: {
+    padding: 15,
+  },
+  loginButton: {
+    padding: 5,
   },
   container: {
     flex: 1,

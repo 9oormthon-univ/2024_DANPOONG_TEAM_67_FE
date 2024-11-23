@@ -10,12 +10,8 @@
     "scheme": "somgil",
     "splash": {
       "image": "./assets/splashLogo.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#ffffff",
-      "androidResizeMode": "cover",
-      "ios": {
-        "resizeMode": "cover"
-      }
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,

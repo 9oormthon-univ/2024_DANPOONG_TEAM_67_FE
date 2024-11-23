@@ -10,6 +10,11 @@ import PackageDetail from './screens/PackageDetail';
 import Package1 from './screens/Package1';
 import PackageOrder from './screens/PackageOrder';
 import ReservationList from './screens/ReservationList';
+import Map from './screens/KakaoMap';
+import WriteReview from './screens/WriteReview';
+import UserInfo from './screens/UserInfo';
+import MyReview from './screens/MyReview';
+
 
 const Stack = createStackNavigator();
 
@@ -31,6 +36,10 @@ const Navigation = () => {
       <Stack.Screen name="Package1" component={Package1} />
       <Stack.Screen name="PackageOrder" component={PackageOrder} />
       <Stack.Screen name="ReservationList" component={ReservationList} />
+      <Stack.Screen name="Map" component={Map} />
+      <Stack.Screen name="WriteReview" component={WriteReview} />
+      <Stack.Screen name="UserInfo" component={UserInfo} />
+      <Stack.Screen name="MyReview" component={MyReview} />
     </Stack.Navigator>
   );
 };
